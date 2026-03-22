@@ -29,6 +29,19 @@ export const userType = defineType({
         ]
       }
     }),
+    defineField({
+      name: 'tastingFrequency',
+      title: 'Tasting Frequency',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Daily Taster', value: 'daily' },
+          { title: 'Weekly Explorer', value: 'weekly' },
+          { title: 'Special Occasion', value: 'special-occasion' },
+          { title: 'Collector', value: 'collector' }
+        ]
+      }
+    }),
     defineField({ name: 'newsletterOptIn', title: 'Newsletter Opt-In', type: 'boolean', initialValue: false }),
   ],
 })

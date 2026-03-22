@@ -1,0 +1,100 @@
+import { PortableText } from "next-sanity";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { sanityFetch } from "@/sanity/lib/fetch";
+import { SINGLE_WINE_QUERY } from "@/sanity/lib/queries";
+import AddToCartButton from "@/components/shared/AddToCartButton";
+
+export const revalidate = 0; // Absolute SSR Precision enforcing backend reads upon reload
+
+export default async function WinePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  const wine = await sanityFetch<any>({
+    query: SINGLE_WINE_QUERY,
+    params: { slug },
+  });
+
+  if (!wine) {
+    notFound();
+  }
+
+  const available = (wine.physical_stock || 0) - (wine.committed_stock || 0);
+  const isSoldOut = available <= 0;
+
+  return (
+    <div className="min-h-screen bg-[#F9F6EE] pt-10 pb-24">
+      <div className="container mx-auto px-6 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24 items-start">
+          
+          {/* Left Column: Image */}
+          <div className="relative aspect-[3/4] w-full bg-[#F5F5DC]/50 rounded-sm overflow-hidden shadow-sm border border-[#4A0404]/5">
+            {wine.imageUrl ? (
+              <Image
+                src={wine.imageUrl}
+                alt={wine.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-[#4A0404]/30 font-serif text-lg">
+                Vintage Hidden
+              </div>
+            )}
+            {/* Embedded Visual Scarcity Flagging */}
+            <div className="absolute top-6 right-6">
+              {isSoldOut ? (
+                <div className="bg-[#4A0404] text-[#F9F6EE] text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-sm shadow-md">
+                  Cellar Empty
+                </div>
+              ) : available <= 5 ? (
+                <div className="bg-[#B8860B] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-sm shadow-md">
+                  Rare Vintage: Only {available} left!
+                </div>
+              ) : (
+                <div className="bg-[#EAE6D9]/90 text-[#4A0404] text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-sm backdrop-blur-sm">
+                  Immediate Dispatch
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Details */}
+          <div className="flex flex-col pt-8 md:pt-16 md:sticky md:top-32">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-[#4A0404]/60 mb-4">
+              {wine.vintage ? `Vintage ${wine.vintage}` : "Non-Vintage"}
+            </h2>
+            <h1 className="font-serif text-4xl md:text-5xl text-[#4A0404] mb-4 tracking-wide leading-tight">
+              {wine.title}
+            </h1>
+            
+            <p className="text-xl font-light text-[#4A0404]/80 tracking-widest mb-10">
+              ${(wine.price / 100).toFixed(2)}
+            </p>
+
+            {/* Tasting Notes */}
+            <div className="prose prose-stone prose-p:text-[#4A0404]/80 prose-p:leading-relaxed prose-p:font-light font-serif mb-12">
+              {wine.tastingNotes ? (
+                <PortableText value={wine.tastingNotes} />
+              ) : (
+                <p>Tasting notes for this vintage are currently being curated by our sommeliers.</p>
+              )}
+            </div>
+
+            {/* Purchase Action intercepting constraints natively */}
+            <AddToCartButton wine={wine} available={available} />
+            
+            {/* SKU / Metadata */}
+            <div className="mt-12 pt-8 border-t border-[#4A0404]/10 flex flex-col gap-2 text-[10px] text-[#4A0404]/50 uppercase tracking-widest font-semibold">
+              <p>SKU: {wine.sku || "N/A"}</p>
+              <p>Authenticity Guaranteed by Arianova Estate</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

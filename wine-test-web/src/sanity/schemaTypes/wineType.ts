@@ -40,4 +40,30 @@ export const wineType = defineType({
       initialValue: 12 
     }),
   ],
+  preview: {
+    select: {
+      title: 'title',
+      physicalStock: 'physical_stock',
+      committedStock: 'committed_stock',
+      media: 'images.0'
+    },
+    prepare(selection) {
+      const {title, physicalStock = 0, committedStock = 0, media} = selection
+      
+      const available = physicalStock - committedStock
+      
+      let subtitle = ''
+      if (physicalStock <= 0 || available <= 0) {
+        subtitle = '🚨 OUT OF STOCK'
+      } else {
+        subtitle = `Available to Sell: ${available} (Physical: ${physicalStock})`
+      }
+
+      return {
+        title: title,
+        subtitle: subtitle,
+        media: media
+      }
+    }
+  }
 })

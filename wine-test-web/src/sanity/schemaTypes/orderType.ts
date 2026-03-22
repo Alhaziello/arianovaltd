@@ -6,6 +6,12 @@ export const orderType = defineType({
   type: 'document',
   fields: [
     defineField({ 
+      name: 'orderNumber', 
+      title: 'Order Number', 
+      type: 'string',
+      readOnly: true 
+    }),
+    defineField({ 
       name: 'stripeSessionId', 
       title: 'Stripe Session ID', 
       type: 'string',
@@ -26,14 +32,16 @@ export const orderType = defineType({
       of: [
         {
           type: 'object',
+          name: 'orderItem',
           fields: [
             { name: 'wine', type: 'reference', to: [{ type: 'wine' }] },
-            { name: 'quantity', type: 'number' }
+            { name: 'quantity', type: 'number' },
+            { name: 'priceAtPurchase', title: 'Price at Purchase (Cents)', type: 'number' }
           ]
         }
       ]
     }),
-    defineField({ name: 'totalPrice', title: 'Total Price (Cents)', type: 'number', readOnly: true }),
+    defineField({ name: 'totalAmount', title: 'Total Amount (Cents)', type: 'number', readOnly: true }),
     defineField({
       name: 'status',
       title: 'Fulfillment Status',
@@ -45,4 +53,22 @@ export const orderType = defineType({
       // This is the only field the admin is allowed to change manually
     })
   ],
+  preview: {
+    select: {
+      orderNumber: 'orderNumber',
+      totalAmount: 'totalAmount',
+      status: 'status',
+    },
+    prepare(selection) {
+      const { orderNumber, totalAmount, status } = selection
+      
+      const formattedTotal = totalAmount ? `$${(totalAmount / 100).toFixed(2)}` : '$0.00'
+      const emoji = status === 'Processing' ? '⏳' : status === 'Shipped' ? '📦' : status === 'Delivered' ? '✅' : '❌'
+
+      return {
+        title: `Order #${orderNumber || 'UNKNOWN'}`,
+        subtitle: `${formattedTotal} - ${emoji} ${status || 'Pending'}`
+      }
+    }
+  }
 })
